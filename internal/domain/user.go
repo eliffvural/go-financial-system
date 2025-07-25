@@ -5,14 +5,17 @@ import (
 	"regexp"
 )
 
+// User, sistemdeki kullanıcıyı temsil eder
+// Kullanıcı adı, e-posta, şifre ve rol bilgilerini içerir
 type User struct {
-	ID       int64  `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
+	ID       int64  `json:"id"`       // Kullanıcının benzersiz ID'si
+	Username string `json:"username"` // Kullanıcı adı
+	Email    string `json:"email"`    // E-posta adresi
+	Password string `json:"password"` // Şifre (hash'lenmiş olarak tutulmalı)
+	Role     string `json:"role"`     // Kullanıcı rolü (ör: admin, user)
 }
 
+// Kullanıcı verisinin geçerli olup olmadığını kontrol eder
 func (u *User) Validate() error {
 	if u.Username == "" {
 		return errors.New("username boş olamaz")
@@ -32,6 +35,7 @@ func (u *User) Validate() error {
 	return nil
 }
 
+// E-posta adresinin geçerli olup olmadığını kontrol eden yardımcı fonksiyon
 func isValidEmail(email string) bool {
 	re := regexp.MustCompile(`^[a-zA-Z0-9._%%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 	return re.MatchString(email)
