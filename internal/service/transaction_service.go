@@ -2,7 +2,7 @@ package service
 
 import (
 	"errors"
-	"gofinancialsystem2/internal/domain"
+	"gofinancialsystem/internal/domain"
 )
 
 // TransactionServiceImpl, TransactionService arayüzünün gerçek implementasyonudur
