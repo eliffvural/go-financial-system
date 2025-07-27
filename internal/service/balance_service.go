@@ -1,89 +1,43 @@
-package service
+package repository
 
 import (
+	"errors"
 	"gofinancialsystem/internal/domain"
 	"sync"
-	"time"
 )
 
-// BalanceHistory, bakiye geçmişini takip etmek için kullanılır
-type BalanceHistory struct {
-	UserID    int64     `json:"user_id"`
-	Amount    float64   `json:"amount"`
-	Timestamp time.Time `json:"timestamp"`
+type BalanceRepositoryImpl struct {
+	balances map[int64]*domain.Balance
+	mu       sync.RWMutex
 }
 
-// BalanceServiceImpl, BalanceService arayüzünün gerçek implementasyonudur
-type BalanceServiceImpl struct {
-	balanceRepo domain.BalanceRepository   // Bakiye veritabanı işlemleri için repository
-	mu          sync.RWMutex               // Thread-safe işlemler için RWMutex
-	history     map[int64][]BalanceHistory // Kullanıcı bakiye geçmişi (cache)
-}
-
-// Yeni bir BalanceServiceImpl oluşturur
-func NewBalanceService(balanceRepo domain.BalanceRepository) *BalanceServiceImpl {
-	return &BalanceServiceImpl{
-		balanceRepo: balanceRepo,
-		history:     make(map[int64][]BalanceHistory),
+func NewBalanceRepository() *BalanceRepositoryImpl {
+	return &BalanceRepositoryImpl{
+		balances: make(map[int64]*domain.Balance),
 	}
 }
 
-// Kullanıcının bakiyesini thread-safe şekilde döndürür
-func (s *BalanceServiceImpl) GetByUserID(userID int64) (*domain.Balance, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.balanceRepo.GetByUserID(userID)
+func (r *BalanceRepositoryImpl) GetByUserID(userID int64) (*domain.Balance, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	if bal, exists := r.balances[userID]; exists {
+		return bal, nil
+	}
+	return nil, errors.New("bakiye bulunamadı")
 }
 
-// Kullanıcının bakiyesini thread-safe şekilde günceller
-func (s *BalanceServiceImpl) Update(userID int64, amount float64) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	// Bakiye güncelleme
-	if err := s.balanceRepo.Update(userID, amount); err != nil {
-		return err
+func (r *BalanceRepositoryImpl) Update(userID int64, amount float64) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	bal, ok := r.balances[userID]
+	if !ok {
+		bal = &domain.Balance{UserID: userID}
+		r.balances[userID] = bal
 	}
-
-	// Geçmiş kaydı ekle
-	historyEntry := BalanceHistory{
-		UserID:    userID,
-		Amount:    amount,
-		Timestamp: time.Now(),
+	if amount < 0 && bal.Amount < -amount {
+		return errors.New("yetersiz bakiye")
 	}
-	s.history[userID] = append(s.history[userID], historyEntry)
-
-	// Geçmiş kayıtlarını optimize et (son 100 kayıt tut)
-	if len(s.history[userID]) > 100 {
-		s.history[userID] = s.history[userID][len(s.history[userID])-100:]
-	}
-
+	bal.Amount += amount
+	bal.LastUpdatedAt = bal.LastUpdatedAt.Add(0) // Sadece örnek için
 	return nil
-}
-
-// Kullanıcının bakiye geçmişini döndürür
-func (s *BalanceServiceImpl) GetHistory(userID int64) []BalanceHistory {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	if history, exists := s.history[userID]; exists {
-		return history
-	}
-	return []BalanceHistory{}
-}
-
-// Bakiye hesaplama optimizasyonu: belirli bir tarihten sonraki değişiklikleri hesaplar
-func (s *BalanceServiceImpl) CalculateBalanceFromDate(userID int64, fromDate time.Time) float64 {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	var totalChange float64
-	if history, exists := s.history[userID]; exists {
-		for _, entry := range history {
-			if entry.Timestamp.After(fromDate) {
-				totalChange += entry.Amount
-			}
-		}
-	}
-	return totalChange
 }
