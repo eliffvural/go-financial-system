@@ -13,8 +13,9 @@ func main() {
 	userRepo := repository.NewUserRepository()
 	userService := service.NewUserService(userRepo)
 
-	// Auth handler'ı oluştur
+	// Handler'ları oluştur
 	authHandler := &api.AuthHandler{UserService: userService}
+	userHandler := &api.UserHandler{UserService: userService}
 
 	// Router oluştur
 	router := api.NewRouter()
@@ -34,6 +35,12 @@ func main() {
 	// Auth endpointleri
 	router.Handle("POST", "/api/v1/auth/register", authHandler.Register)
 	router.Handle("POST", "/api/v1/auth/login", authHandler.Login)
+
+	// User Management endpointleri
+	router.Handle("GET", "/api/v1/users", userHandler.ListUsers)
+	router.Handle("GET", "/api/v1/users/get", userHandler.GetUser)
+	router.Handle("PUT", "/api/v1/users/update", userHandler.UpdateUser)
+	router.Handle("DELETE", "/api/v1/users/delete", userHandler.DeleteUser)
 
 	// Sunucuyu başlat
 	api.StartServer(":8080", router)
