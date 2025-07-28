@@ -11,6 +11,9 @@ type TransactionService interface {
 	Create(tx *Transaction) error
 	GetByID(id int64) (*Transaction, error)
 	ListByUser(userID int64) ([]*Transaction, error)
+	Credit(userID int64, amount float64) error
+	Debit(userID int64, amount float64) error
+	Transfer(fromUserID, toUserID int64, amount float64) error
 }
 
 type BalanceService interface {
