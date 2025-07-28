@@ -46,3 +46,8 @@ func (s *UserServiceImpl) Authenticate(username, password string) (*domain.User,
 func (s *UserServiceImpl) Authorize(user *domain.User, requiredRole string) bool {
 	return user.Role == requiredRole
 }
+
+// Kullanıcıyı ID ile getirir
+func (s *UserServiceImpl) GetByID(id int64) (*domain.User, error) {
+	return s.userRepo.FindByID(id)
+}

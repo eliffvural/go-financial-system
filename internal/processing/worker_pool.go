@@ -2,7 +2,7 @@ package processing
 
 import (
 	"fmt"
-	"internal/domain"
+	"gofinancialsystem/internal/domain"
 	"sync"
 )
 

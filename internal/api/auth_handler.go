@@ -3,13 +3,12 @@ package api
 import (
 	"encoding/json"
 	"gofinancialsystem/internal/domain"
-	"gofinancialsystem/internal/service"
 	"net/http"
 )
 
 // AuthHandler, auth işlemleri için servisleri tutar
 type AuthHandler struct {
-	UserService service.UserService
+	UserService domain.UserService
 }
 
 // Kullanıcı kaydı endpoint'i (POST /api/v1/auth/register)
