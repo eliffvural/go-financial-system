@@ -11,11 +11,20 @@ import (
 func main() {
 	// Repository ve servisleri başlat
 	userRepo := repository.NewUserRepository()
+	balanceRepo := repository.NewBalanceRepository()
+	transactionRepo := repository.NewTransactionRepository()
+
 	userService := service.NewUserService(userRepo)
+	balanceService := service.NewBalanceService(balanceRepo)
+	transactionService := service.NewTransactionService(transactionRepo, balanceRepo)
 
 	// Handler'ları oluştur
 	authHandler := &api.AuthHandler{UserService: userService}
 	userHandler := &api.UserHandler{UserService: userService}
+	transactionHandler := &api.TransactionHandler{
+		TransactionService: transactionService,
+		BalanceService:     balanceService,
+	}
 
 	// Router oluştur
 	router := api.NewRouter()
@@ -41,6 +50,13 @@ func main() {
 	router.Handle("GET", "/api/v1/users/get", userHandler.GetUser)
 	router.Handle("PUT", "/api/v1/users/update", userHandler.UpdateUser)
 	router.Handle("DELETE", "/api/v1/users/delete", userHandler.DeleteUser)
+
+	// Transaction endpointleri
+	router.Handle("POST", "/api/v1/transactions/credit", transactionHandler.Credit)
+	router.Handle("POST", "/api/v1/transactions/debit", transactionHandler.Debit)
+	router.Handle("POST", "/api/v1/transactions/transfer", transactionHandler.Transfer)
+	router.Handle("GET", "/api/v1/transactions/history", transactionHandler.GetHistory)
+	router.Handle("GET", "/api/v1/transactions/get", transactionHandler.GetTransaction)
 
 	// Sunucuyu başlat
 	api.StartServer(":8080", router)
