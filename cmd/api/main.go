@@ -30,11 +30,15 @@ func main() {
 	// Router oluştur
 	router := api.NewRouter()
 
-	// Middleware'leri ekle
+	// Middleware'leri ekle (sıralama önemli)
+	router.Use(api.ErrorHandlingMiddleware)
+	router.Use(api.PerformanceMonitoringMiddleware)
 	router.Use(api.LoggingMiddleware)
 	router.Use(api.CORSMiddleware)
 	router.Use(api.SecurityHeadersMiddleware)
 	router.Use(api.RateLimitMiddleware)
+	router.Use(api.ValidationMiddleware)
+	router.Use(api.RequestSizeMiddleware(1024 * 1024)) // 1MB limit
 
 	// Health endpoint
 	router.Handle("GET", "/api/v1/health", func(w http.ResponseWriter, r *http.Request) {
@@ -42,28 +46,28 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
-	// Auth endpointleri
+	// Auth endpointleri (auth middleware yok)
 	router.Handle("POST", "/api/v1/auth/register", authHandler.Register)
 	router.Handle("POST", "/api/v1/auth/login", authHandler.Login)
 
-	// User Management endpointleri
-	router.Handle("GET", "/api/v1/users", userHandler.ListUsers)
-	router.Handle("GET", "/api/v1/users/get", userHandler.GetUser)
-	router.Handle("PUT", "/api/v1/users/update", userHandler.UpdateUser)
-	router.Handle("DELETE", "/api/v1/users/delete", userHandler.DeleteUser)
+	// User Management endpointleri (auth gerekli)
+	router.Handle("GET", "/api/v1/users", api.AuthMiddleware(userHandler.ListUsers))
+	router.Handle("GET", "/api/v1/users/get", api.AuthMiddleware(userHandler.GetUser))
+	router.Handle("PUT", "/api/v1/users/update", api.AuthMiddleware(userHandler.UpdateUser))
+	router.Handle("DELETE", "/api/v1/users/delete", api.AdminOnlyMiddleware(userHandler.DeleteUser))
 
-	// Transaction endpointleri
-	router.Handle("POST", "/api/v1/transactions/credit", transactionHandler.Credit)
-	router.Handle("POST", "/api/v1/transactions/debit", transactionHandler.Debit)
-	router.Handle("POST", "/api/v1/transactions/transfer", transactionHandler.Transfer)
-	router.Handle("GET", "/api/v1/transactions/history", transactionHandler.GetHistory)
-	router.Handle("GET", "/api/v1/transactions/get", transactionHandler.GetTransaction)
+	// Transaction endpointleri (auth gerekli)
+	router.Handle("POST", "/api/v1/transactions/credit", api.AuthMiddleware(transactionHandler.Credit))
+	router.Handle("POST", "/api/v1/transactions/debit", api.AuthMiddleware(transactionHandler.Debit))
+	router.Handle("POST", "/api/v1/transactions/transfer", api.AuthMiddleware(transactionHandler.Transfer))
+	router.Handle("GET", "/api/v1/transactions/history", api.AuthMiddleware(transactionHandler.GetHistory))
+	router.Handle("GET", "/api/v1/transactions/get", api.AuthMiddleware(transactionHandler.GetTransaction))
 
-	// Balance endpointleri
-	router.Handle("GET", "/api/v1/balances/current", balanceHandler.GetCurrentBalance)
-	router.Handle("GET", "/api/v1/balances/historical", balanceHandler.GetBalanceHistory)
-	router.Handle("GET", "/api/v1/balances/at-time", balanceHandler.GetBalanceAtTime)
-	router.Handle("GET", "/api/v1/balances/calculate", balanceHandler.CalculateBalance)
+	// Balance endpointleri (auth gerekli)
+	router.Handle("GET", "/api/v1/balances/current", api.AuthMiddleware(balanceHandler.GetCurrentBalance))
+	router.Handle("GET", "/api/v1/balances/historical", api.AuthMiddleware(balanceHandler.GetBalanceHistory))
+	router.Handle("GET", "/api/v1/balances/at-time", api.AuthMiddleware(balanceHandler.GetBalanceAtTime))
+	router.Handle("GET", "/api/v1/balances/calculate", api.AuthMiddleware(balanceHandler.CalculateBalance))
 
 	// Sunucuyu başlat
 	api.StartServer(":8080", router)
