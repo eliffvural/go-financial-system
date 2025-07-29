@@ -1,5 +1,7 @@
 package domain
 
+import "time"
+
 // UserService, TransactionService, BalanceService gibi servisler için temel arayüzler
 type UserService interface {
 	Register(user *User) error
@@ -17,8 +19,11 @@ type TransactionService interface {
 }
 
 type BalanceService interface {
-	GetByUserID(userID int64) (*Balance, error)
-	Update(userID int64, amount float64) error
+	GetBalance(userID int64) (*Balance, error)
+	UpdateBalance(userID int64, amount float64) error
+	GetBalanceHistory(userID int64) ([]*Balance, error)
+	GetBalanceAtTime(userID int64, targetTime time.Time) (*Balance, error)
+	CalculateBalance(userID int64) (float64, error)
 }
 
 // Repository arayüzleri

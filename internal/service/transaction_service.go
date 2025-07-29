@@ -109,3 +109,13 @@ func (s *TransactionServiceImpl) Rollback(txID int64) error {
 	tx.Status = domain.TransactionFailed
 	return nil
 }
+
+// Belirli bir transaction'ı ID ile getirir
+func (s *TransactionServiceImpl) GetByID(id int64) (*domain.Transaction, error) {
+	return s.transactionRepo.FindByID(id)
+}
+
+// Kullanıcının tüm transaction'larını listeler
+func (s *TransactionServiceImpl) ListByUser(userID int64) ([]*domain.Transaction, error) {
+	return s.transactionRepo.ListByUser(userID)
+}
