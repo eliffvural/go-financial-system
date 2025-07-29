@@ -25,6 +25,7 @@ func main() {
 		TransactionService: transactionService,
 		BalanceService:     balanceService,
 	}
+	balanceHandler := &api.BalanceHandler{BalanceService: balanceService}
 
 	// Router oluştur
 	router := api.NewRouter()
@@ -57,6 +58,12 @@ func main() {
 	router.Handle("POST", "/api/v1/transactions/transfer", transactionHandler.Transfer)
 	router.Handle("GET", "/api/v1/transactions/history", transactionHandler.GetHistory)
 	router.Handle("GET", "/api/v1/transactions/get", transactionHandler.GetTransaction)
+
+	// Balance endpointleri
+	router.Handle("GET", "/api/v1/balances/current", balanceHandler.GetCurrentBalance)
+	router.Handle("GET", "/api/v1/balances/historical", balanceHandler.GetBalanceHistory)
+	router.Handle("GET", "/api/v1/balances/at-time", balanceHandler.GetBalanceAtTime)
+	router.Handle("GET", "/api/v1/balances/calculate", balanceHandler.CalculateBalance)
 
 	// Sunucuyu başlat
 	api.StartServer(":8080", router)
