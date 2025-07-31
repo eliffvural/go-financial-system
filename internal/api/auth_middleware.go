@@ -3,9 +3,9 @@ package api
 import (
 	"context"
 	"fmt"
+	"gofinancialsystem/internal/domain"
 	"net/http"
 	"strings"
-	"gofinancialsystem/internal/domain"
 )
 
 // AuthMiddleware, JWT token kontrolü yapar
@@ -100,13 +100,23 @@ func UserOrAdminMiddleware(next HandlerFunc) HandlerFunc {
 
 // Basit token validation (gerçek implementasyonda JWT kullanılmalı)
 func validateToken(token string) (int64, error) {
-	// Bu basit implementasyon - gerçek JWT validation yapılmalı
-	// Şimdilik token'ı user ID olarak kabul ediyoruz
-	var userID int64
-	_, err := fmt.Sscanf(token, "%d", &userID)
-	if err != nil {
-		return 0, err
+	// Token formatı: "token_username_userID"
+	// Örnek: "token_testuser_2"
+
+	// Token'ı parçalara ayır
+	parts := strings.Split(token, "_")
+	if len(parts) != 3 {
+		return 0, fmt.Errorf("geçersiz token formatı")
 	}
+
+	// Son parçayı user ID olarak al
+	userIDStr := parts[2]
+	var userID int64
+	_, err := fmt.Sscanf(userIDStr, "%d", &userID)
+	if err != nil {
+		return 0, fmt.Errorf("geçersiz user ID")
+	}
+
 	return userID, nil
 }
 
@@ -118,4 +128,4 @@ func getUserByID(userID int64) (*domain.User, error) {
 		Username: "user",
 		Role:     "user", // Varsayılan role
 	}, nil
-} 
+}

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"gofinancialsystem/internal/domain"
 	"net/http"
 )
@@ -34,8 +35,20 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Kayıt başarısız: " + err.Error()))
 		return
 	}
+
+	response := map[string]interface{}{
+		"message": "Kayıt başarılı",
+		"user": map[string]interface{}{
+			"id":       user.ID,
+			"username": user.Username,
+			"email":    user.Email,
+			"role":     user.Role,
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte("Kayıt başarılı"))
+	json.NewEncoder(w).Encode(response)
 }
 
 // Kullanıcı girişi endpoint'i (POST /api/v1/auth/login)
@@ -55,6 +68,21 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Giriş başarısız: " + err.Error()))
 		return
 	}
+
+	// Generate a simple token (in production, use JWT)
+	token := fmt.Sprintf("token_%s_%d", user.Username, user.ID)
+
+	response := map[string]interface{}{
+		"token": token,
+		"user": map[string]interface{}{
+			"id":       user.ID,
+			"username": user.Username,
+			"email":    user.Email,
+			"role":     user.Role,
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Giriş başarılı, kullanıcı: " + user.Username))
+	json.NewEncoder(w).Encode(response)
 }
